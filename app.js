@@ -204,10 +204,10 @@ router.all('/branchs', async (ctx, next) => {
     // const project = await Project.findOne({id: 1})
     // const gitService = new GitService()
     // const result = await gitService.pull(project)
-    // ctx.body = result 
+    // ctx.body = result
     const gitService = new GitService()
     gitService.pushPlistProject()
-    
+
 })
 
 router.all('/tasks', async (ctx, next) => {

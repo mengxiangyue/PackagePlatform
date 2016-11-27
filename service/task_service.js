@@ -6,7 +6,7 @@ const spawn = require('child_process').spawn;
 
 const config = require('../config')
 // import GitService from './git_service'
-const GitService = require('./git_service')
+const GitService = require('./git_service').GitService
 
 class TaskService {
     async addTask(projectId, scheme, profile) {
