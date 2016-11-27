@@ -54,6 +54,7 @@
                         <th>项目名</th>
                         <th>项目联系人</th>
                         <th>状态</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="project-list">
@@ -146,6 +147,7 @@
                         <td>${project.name}</td>
                         <td>目前还没有</td>
                         <td>${state}</td>
+                        <td><button type="button" class="btn btn-primary btn-sm">配置</button></td>
                     </tr>`)
                 projectDom.on('click', () => {
                     window.location.href = '/add_task/'+project.id;

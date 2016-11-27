@@ -242,29 +242,28 @@ router.all('/branchs', async(ctx, next) => {
 
 })
 
-router.all('/tasks', async(ctx, next) => {
-    let task = Task.findOne({
-        id: 19
+router.all('/tasks/:id', async(ctx, next) => {
+    let project = await Project.findOne({
+        id: ctx.params.id
     })
-    Task.update({
-        id: 19
-    }, {
-        result: 1111
-    }, error => {
-        console.log('errrrrr', error)
+    console.log('project: ', project)
+    let tasks = await Task.find({
+        projectId: project._id
     })
-    console.log(task)
+    ctx.body = tasks
 })
 
 router.get('/add_task/:id', async(ctx, next) => {
-  await ctx.render('add_task', {id: ctx.params.id})
-  // await ctx.render('index')
-    // const project = await Project.findOne({
-    //     id: ctx.params.id
-    // })
-    // await ctx.render('add_task', {
-    //     project
-    // })
+    await ctx.render('add_task', {
+            id: ctx.params.id
+        })
+        // await ctx.render('index')
+        // const project = await Project.findOne({
+        //     id: ctx.params.id
+        // })
+        // await ctx.render('add_task', {
+        //     project
+        // })
 })
 router.post('/add_task', async(ctx, next) => {
     const projectId = ctx.request.body.projectId
