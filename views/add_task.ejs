@@ -16,7 +16,7 @@
     <div class="container">
         <div id="header">
             <h1 style="display: inline-block;">Task列表</h1>
-            <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#myModal" style="float: right;margin-top: 10px;">Add Task</button>
+            <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#save-task-modal" style="float: right;margin-top: 10px;">Add Task</button>
         </div>
         <div id="tasks">
             <table class="table">
@@ -38,6 +38,39 @@
             </table>
         </div>
     </div>
+
+    <div class="modal fade" id="save-task-modal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title">Add Task</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group row">
+                        <label for="example-text-input" class="col-xs-2 col-form-label">profile</label>
+                        <div class="col-xs-10">
+                            <input class="form-control" type="text" placeholder="打包的povision" id="task-profile">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="example-text-input" class="col-xs-2 col-form-label">scheme</label>
+                        <div class="col-xs-10">
+                            <input class="form-control" type="text" placeholder="打包的scheme" id="task-scheme">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="save-task" type="button" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
     <input id="project-id" type="hidden" value="<%=id%>">
     <script type="text/javascript">
         $.post('/tasks/' + $("#project-id").val(), (result) => {
@@ -61,9 +94,36 @@
                         <td><button type="button" class="btn btn-primary btn-sm">安装</button></td>
                     </tr>`
                 )
-                alert("2")
                 $("#task-list").append(taskDom)
             }
+        })
+
+        $("#save-task").on('click', () => {
+            $("#task-profile").val("BlueGoGo_Development")
+            $("#task-scheme").val("ArchiveDemo")
+
+            const profile = $("#task-profile").val()
+            const scheme = $("#task-scheme").val()
+            const projectId = $("#project-id").val()
+            if (profile == "" || scheme == "" || projectId == "") {
+                alert("参数有问题，请重新输入")
+                return
+            }
+            $("#loading-view").show()
+            const param = {
+                profile,
+                scheme,
+                projectId
+            }
+            $.post('/add_task', param, result => {
+                $("#loading-view").hide()
+                if (result.code == 0) {
+                    $("#save-task-modal").modal("hide")
+                    window.location.reload()
+                } else {
+                    alert(result.msg)
+                }
+            })
         })
     </script>
 </body>
