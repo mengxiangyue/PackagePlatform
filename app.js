@@ -7,9 +7,9 @@ const logger = require('koa-logger');
 const mongoose = require("mongoose");
 const router = require("koa-router")()
 const mail = require("./service/email_service").MailService
-// import GitService from './service/git_service'
+    // import GitService from './service/git_service'
 const GitService = require('./service/git_service').GitService
-// import TaskService from './service/task_service'
+    // import TaskService from './service/task_service'
 const TaskService = require('./service/task_service').TaskService
 
 
@@ -21,12 +21,17 @@ const Task = require('./model').Task
 const app = new Koa();
 
 app.use(bodyParser())
-app.use(convert(json({ pretty: false, param: 'pretty' })));
-app.use(views(__dirname + '/views', { extension: 'ejs' }));
+app.use(convert(json({
+    pretty: false,
+    param: 'pretty'
+})));
+app.use(views(__dirname + '/views', {
+    extension: 'ejs'
+}));
 
 app.use(convert(logger()));
 // logger
-app.use(async (ctx, next) => {
+app.use(async(ctx, next) => {
     const start = new Date();
     await next();
     const ms = new Date() - start;
@@ -35,12 +40,23 @@ app.use(async (ctx, next) => {
 
 app.use(convert(require('koa-static')(__dirname + '/public')));
 
-router.all('/add_project', async (ctx, next) => {
+
+router.all('/projects', async(ctx, next) => {
+    const projects = await Project.find()
+    ctx.body = projects.map(project => {
+        project.username = ''
+        project.password = ''
+        project.url = ''
+        return project
+    })
+})
+
+router.all('/add_project', async(ctx, next) => {
     const url = ctx.request.body.url
     const username = ctx.request.body.username
     const password = ctx.request.body.password
     const startupFile = ctx.request.body.startupFile
-    const isFource = ctx.request.body.isFource || '0'
+    const isForce = ctx.request.body.isForce || '0'
     if (url == undefined || username == undefined || password == undefined || startupFile == undefined) {
         ctx.body = {
             code: 100,
@@ -49,13 +65,21 @@ router.all('/add_project', async (ctx, next) => {
         return
     }
     try {
-        const existProject = await Project.findOne({ $or: [{ url: url, result: 1 }, { url: url, result: 0 }] })
+        const existProject = await Project.findOne({
+            $or: [{
+                url: url,
+                result: 1
+            }, {
+                url: url,
+                result: 0
+            }]
+        })
         if (existProject != undefined) {
-            if (isFource == '0') {
+            if (isForce == '0') {
                 ctx.body = {
                     code: 101,
                     msg: '该项目已经存在',
-                    data: existProject
+                    // data: existProject
                 }
                 return
             } else {
@@ -81,7 +105,7 @@ router.all('/add_project', async (ctx, next) => {
 
         setTimeout(() => {
             const gitService = new GitService()
-            // const result = await gitUtil.clone(url, username, password)
+                // const result = await gitUtil.clone(url, username, password)
             gitService.clone(url, username, password)
                 .then(result => {
                     let resultCode = 0
@@ -92,7 +116,11 @@ router.all('/add_project', async (ctx, next) => {
                     }
                     console.log('完成了 回調了', result, resultCode, savedProject.id)
                     try {
-                        Project.update({ id: savedProject.id }, { result: resultCode }, error => {
+                        Project.update({
+                            id: savedProject.id
+                        }, {
+                            result: resultCode
+                        }, error => {
                             if (error) {
                                 console.log('更新失败', error)
                             }
@@ -119,7 +147,7 @@ router.all('/add_project', async (ctx, next) => {
     }
 })
 
-router.all('/get_project_status', async (ctx, next) => {
+router.all('/get_project_status', async(ctx, next) => {
     const projectId = ctx.request.body.projectId
     if (projectId == undefined) {
         ctx.body = {
@@ -128,7 +156,9 @@ router.all('/get_project_status', async (ctx, next) => {
         }
         return
     }
-    const project = await Project.findOne({ id: projectId })
+    const project = await Project.findOne({
+        id: projectId
+    })
     if (project == undefined) {
         ctx.body = {
             code: 103,
@@ -143,7 +173,7 @@ router.all('/get_project_status', async (ctx, next) => {
 
 })
 
-router.all('/config_project', async (ctx, next) => {
+router.all('/config_project', async(ctx, next) => {
     const projectId = ctx.request.body.projectId
     let schemes = ctx.request.body.scheme
     let profiles = ctx.request.body.profile
@@ -161,7 +191,9 @@ router.all('/config_project', async (ctx, next) => {
         profiles = [profiles]
     }
 
-    const project = await Project.findOne({ id: projectId })
+    const project = await Project.findOne({
+        id: projectId
+    })
     if (project == undefined) {
         ctx.body = {
             code: 103,
@@ -198,7 +230,7 @@ router.all('/config_project', async (ctx, next) => {
     // });
 })
 
-router.all('/branchs', async (ctx, next) => {
+router.all('/branchs', async(ctx, next) => {
     // const project = await Scheme.findOne({ _id: '581b61decfcb5eec7052da29' }).populate('projectId')
     // ctx.body = project
     // const project = await Project.findOne({id: 1})
@@ -210,15 +242,31 @@ router.all('/branchs', async (ctx, next) => {
 
 })
 
-router.all('/tasks', async (ctx, next) => {
-    let task = Task.findOne({ id: 19 })
-    Task.update({ id: 19 }, { result: 1111 }, error => {
+router.all('/tasks', async(ctx, next) => {
+    let task = Task.findOne({
+        id: 19
+    })
+    Task.update({
+        id: 19
+    }, {
+        result: 1111
+    }, error => {
         console.log('errrrrr', error)
     })
     console.log(task)
 })
 
-router.all('/add_task', async (ctx, next) => {
+router.get('/add_task/:id', async(ctx, next) => {
+  await ctx.render('add_task', {id: ctx.params.id})
+  // await ctx.render('index')
+    // const project = await Project.findOne({
+    //     id: ctx.params.id
+    // })
+    // await ctx.render('add_task', {
+    //     project
+    // })
+})
+router.post('/add_task', async(ctx, next) => {
     const projectId = ctx.request.body.projectId
     const profile = ctx.request.body.profile
     const scheme = ctx.request.body.scheme
@@ -278,7 +326,7 @@ router.all('/add_task', async (ctx, next) => {
 
 app.use(router.routes()).use(router.allowedMethods());
 app.use(async ctx => {
-    await ctx.render('wealcom', { "user": "世界1" })
+    await ctx.render('index')
 });
 
 // mongoose.Promise = require('bluebird');

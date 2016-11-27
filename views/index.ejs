@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>项目列表</title>
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <script src="jquery-3.1.1.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <style media="screen">
+        @media (min-width: 544px) {}
+
+        .loading {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-conten {
+            position: absolute;
+            text-align: center;
+            width: 100px;
+            height: 50px;
+            margin: auto;
+            line-height: 50px;
+            background-color: rgba(0, 0, 0, 0.6);
+            top: 50%;
+            left: 50%;
+            margin-top: -50px;
+            margin-left: -50px;
+            color: white;
+            border-radius: 5px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="loading-view" class="loading" style="display: none;">
+        <span class="loading-conten">正在加载中</span>
+    </div>
+    <div class="container">
+        <div id="header">
+            <h1 style="display: inline-block;">项目列表</h1>
+            <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#myModal" style="float: right;margin-top: 10px;">添加项目</button>
+        </div>
+        <div id="projects">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>图标</th>
+                        <th>项目名</th>
+                        <th>项目联系人</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody id="project-list">
+                    <!-- <tr>
+                    <td scope="row">1</td>
+                    <td>Mark</td>
+                    <td>Otto</td>
+                </tr> -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="myModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title">添加新项目</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group row">
+                        <label for="example-text-input" class="col-xs-2 col-form-label">项目地址</label>
+                        <div class="col-xs-10">
+                            <input class="form-control" type="text" placeholder="Git仓库的http地址" id="project-url">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="example-text-input" class="col-xs-2 col-form-label">启动文件</label>
+                        <div class="col-xs-10">
+                            <input class="form-control" type="text" placeholder="项目的启动文件，需要包含xcproject或xcworkspace后缀名" id="project-startup-file">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="example-text-input" class="col-xs-2 col-form-label">用户名</label>
+                        <div class="col-xs-10">
+                            <input class="form-control" type="text" placeholder="下载该仓库代码的用户名" id="project-username">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="example-text-input" class="col-xs-2 col-form-label">密码</label>
+                        <div class="col-xs-10">
+                            <input class="form-control" type="text" placeholder="下载该仓库代码的密码" id="project-password">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="save-project" type="button" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+    <div id="project-exist-dialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+                    <h4 class="modal-title">项目已经存在是否覆盖更新</h4>
+                </div>
+                <div class="modal-body">
+                    <span>覆盖更新将会删除原来的git工程，重新下载</span>
+                </div>
+                <div class="modal-footer">
+                    <button id="cancel" type="button" class="btn btn-primary" data-dismiss="modal">取消</button>
+                    <button id="force-save-project" type="button" class="btn btn-primary">重新下载</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $.post('/projects', {}, (result) => {
+            for (project of result) {
+                let state = "正在下载中"
+                if (project.result == 1) {
+                    state = "添加成功"
+                } else if (project.result == -1) {
+                    state = "添加失败"
+                }
+                const projectDom = $(
+                    `<tr>
+                        <td>目前也没有</td>
+                        <td>${project.name}</td>
+                        <td>目前还没有</td>
+                        <td>${state}</td>
+                    </tr>`)
+                projectDom.on('click', () => {
+                    window.location.href = '/add_task/'+project.id;
+                })
+                $("#project-list").append(projectDom)
+            }
+        })
+
+        $("#save-project").on('click', () => {
+            addProject()
+        })
+
+        $("#force-save-project").on('click', () => {
+            addProject(1)
+        })
+
+        function addProject(isForce = 0) {
+            const url = $("#project-url").val()
+            const startupFile = $("#project-startup-file").val()
+            const username = $("#project-username").val()
+            const password = $("#project-password").val()
+            if (url == "" || startupFile == "" || username == "" || password == "") {
+                alert("输入项目不能为空")
+                return
+            }
+            $("#loading-view").show()
+            const param = {
+                url,
+                startupFile,
+                username,
+                password,
+                isForce
+            }
+            $.post('/add_project', param, result => {
+                $("#loading-view").hide()
+                if (result.code == 101) {
+                    $("#myModal").modal("hide")
+                    $("#project-exist-dialog").modal('show')
+                } else {
+                    $("#myModal").modal("hide")
+                    $("#project-exist-dialog").modal('hide')
+                    window.location.reload()
+                }
+            })
+        }
+    </script>
+</body>
+
+</html>

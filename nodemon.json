@@ -1,4 +1,4 @@
- 
+
 {
-    "ignore": ["git_repo", "task"]
-} 
+    "ignore": ["git_repo", "task", "views", "public"]
+}
