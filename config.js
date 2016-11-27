@@ -3,4 +3,4 @@ const gitRepositoryConfig = {
 }
 
 exports.gitConfig = gitRepositoryConfig
-exports.taskFolderPath = __dirname + '/task'
+exports.taskFolderPath = __dirname + '/public/task_folder'

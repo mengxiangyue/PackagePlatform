@@ -3,6 +3,7 @@ const fs = require('fs-extra')
 
 const config = require('../config')
 const plistConfig = require('../plist_config').plist
+const Project = require('../model').Project
 
 class GitService {
     constructor() {
@@ -73,13 +74,65 @@ class GitService {
     }
 
     async pushPlistProject(task) {
+      const project = await Project.findOne({_id: task.projectId})
+      console.log('mxy---------', project)
+      // const project = await Scheme.findOne({ _id: '581b61decfcb5eec7052da29' }).populate('projectId')
+      // const project = Project.find()
+      const plistContent = `
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+          	<key>items</key>
+          	<array>
+          		<dict>
+          			<key>assets</key>
+          			<array>
+          				<dict>
+          					<key>kind</key>
+          					<string>software-package</string>
+          					<key>url</key>
+          					<string>http://192.168.1.101:3000/task_folder/${task.id}/${project.name}.ipa</string>
+          				</dict>
+          				<dict>
+          					<key>kind</key>
+          					<string>full-size-image</string>
+          					<key>needs-shine</key>
+          					<false/>
+          					<key>url</key>
+          					<string>http://mobile.smartdot.com.cn:15000/store/images/smartdotGOMPortal96.png</string>
+          				</dict>
+          				<dict>
+          					<key>kind</key>
+          					<string>display-image</string>
+          					<key>needs-shine</key>
+          					<false/>
+          					<key>url</key>
+          					<string>http://mobile.smartdot.com.cn:15000/store/images/smartdotGOMPortal96.png</string>
+          				</dict>
+          			</array>
+          			<key>metadata</key>
+          			<dict>
+          				<key>bundle-identifier</key>
+          				<string>com.beastbike.bluegogo</string>
+          				<key>kind</key>
+          				<string>software</string>
+          				<key>subtitle</key>
+          				<string>${project.name}</string>
+          				<key>title</key>
+          				<string>${project.name}</string>
+          			</dict>
+          		</dict>
+          	</array>
+          </dict>
+          </plist>`
         if (task == undefined) {
             return
         }
         try {
             const plistFileName = task.id + '.plist'
             const repo = await nodegit.Repository.open(plistConfig.localPath)
-            fs.writeFileSync(repo.workdir() + plistFileName, '444444444')
+            fs.writeFileSync(repo.workdir() + plistFileName, plistContent)
             const index = await repo.refreshIndex()
             await index.addByPath(plistFileName)
             await index.write()
@@ -87,9 +140,9 @@ class GitService {
             const head = await nodegit.Reference.nameToId(repo, "HEAD");
             const parent = await repo.getCommit(head);
             const author = nodegit.Signature.create("Scott Chacon",
-                "schacon@gmail.com", 123456789, 60);
+                "schacon@gmail.com", new Date().getTime(), 60);
             const committer = nodegit.Signature.create("Scott A Chacon",
-                "scott@github.com", 987654321, 90);
+                "scott@github.com", new Date().getTime(), 90);
             const commitId = await repo.createCommit("HEAD", author, committer, "message", oid, [parent]);
             const remote = await repo.getRemote('origin')
             let retryTimes = 0
@@ -120,6 +173,3 @@ class GitService {
 // export default GitService
 // module.export = GitService
 exports.GitService = GitService
-
-
-

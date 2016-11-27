@@ -91,7 +91,7 @@
                         <td>${task.id}</td>
                         <td>目前还没有</td>
                         <td>${state}</td>
-                        <td><button type="button" class="btn btn-primary btn-sm">安装</button></td>
+                        <td><a class="btn btn-primary btn-sm" href="itms-services://?action=download-manifest&url=https://coding.net/u/mengxiangyue_speedx/p/plist/git/raw/master/${task.id}.plist">安装</a></td>
                     </tr>`
                 )
                 $("#task-list").append(taskDom)
