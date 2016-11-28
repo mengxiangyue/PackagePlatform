@@ -3,9 +3,11 @@ const fs = require('fs-extra')
 const Task = require('../model').Task
 const Project = require('../model').Project
 const spawn = require('child_process').spawn;
+const Canvas = require('canvas'),
+    Image = Canvas.Image
 
 const config = require('../config')
-// import GitService from './git_service'
+    // import GitService from './git_service'
 const GitService = require('./git_service').GitService
 
 class TaskService {
@@ -49,12 +51,36 @@ class TaskService {
 
     // 需要优化 简化参数传递
     async package(task, project, scheme, profile) {
+        const dir = config.gitConfig.localPath + "/" + project.name + "/" + project.name + "/Assets.xcassets/AppIcon.appiconset/"
+        // const json = require(dir + "Contents.json")
+        const json = fs.readJsonSync(dir + "Contents.json")
+        const images = json.images
+        let needModifyImageNames = []
+        for (var i = 0; i < images.length; i++) {
+            const dict = images[i]
+            if (dict.size == "60x60" && dict.scale == '2x') {
+                const filename = dict.filename
+                needModifyImageNames.push(filename)
+                fs.copySync(dir + filename, dir + filename + 'bak')
+            } else if (dict.size == "60x60" && dict.scale == '3x') {
+                const filename = dict.filename
+                needModifyImageNames.push(filename)
+                fs.copySync(dir + filename, dir + filename + 'bak')
+            }
+        }
+        console.log("mxy", needModifyImageNames)
+        // todo 
+        // addDateOnIcon(dir, needModifyImageNames)
         const gitService = new GitService()
         const result = await gitService.pull(project)
         if (result) {
             // 将本次打包节点更新到数据库
         }
-        Task.update({ id: task.id }, { isBuilding: true }, error => {
+        Task.update({
+            id: task.id
+        }, {
+            isBuilding: true
+        }, error => {
             console.log('更新数据 ---------', error);
         })
         const taskFolder = config.taskFolderPath + '/' + task.id
@@ -70,7 +96,7 @@ class TaskService {
         });
 
         command.stdout.on('data', (data) => {
-            fs.appendFile(logfile, data, 'utf-8', function (error) {
+            fs.appendFile(logfile, data, 'utf-8', function(error) {
                 if (error) {
                     console.log('log file:' + task.id)
                 }
@@ -79,7 +105,7 @@ class TaskService {
 
         command.stderr.on('data', (data) => {
             // console.log('stderr:' + data);
-            fs.appendFile(logfile, data, 'utf-8', function (error) {
+            fs.appendFile(logfile, data, 'utf-8', function(error) {
                 if (error) {
                     console.log('log file:' + task.id)
                 }
@@ -91,12 +117,12 @@ class TaskService {
             if (code == 0) {
                 const exportFileName = project.startupFile.replace('xcworkspace', '').replace('xcodeproj', '').replace('\.', '') + '.ipa'
                 const exportFilePath = taskFolder + '/' + exportFileName
-                // xcodebuild -exportArchive -exportFormat IPA -archivePath ./build/bluegogo.xcarchive -exportPath bluegogo.ipa -exportProvisioningProfile 'BlueGoGo_Development'
+                    // xcodebuild -exportArchive -exportFormat IPA -archivePath ./build/bluegogo.xcarchive -exportPath bluegogo.ipa -exportProvisioningProfile 'BlueGoGo_Development'
                 const exportCommand = spawn('xcodebuild', ['-exportArchive', '-exportFormat', 'IPA', '-archivePath', archiveFilePath, '-exportPath', exportFilePath, '-exportProvisioningProfile', profile], {
                     shell: true
                 });
                 exportCommand.stdout.on('data', (data) => {
-                    fs.appendFile(logfile, data, 'utf-8', function (error) {
+                    fs.appendFile(logfile, data, 'utf-8', function(error) {
                         if (error) {
                             console.log('log file:' + task.id)
                         }
@@ -104,7 +130,7 @@ class TaskService {
                 });
 
                 exportCommand.stderr.on('data', (data) => {
-                    fs.appendFile(logfile, data, 'utf-8', function (error) {
+                    fs.appendFile(logfile, data, 'utf-8', function(error) {
                         if (error) {
                             console.log('log file:' + task.id)
                         }
@@ -112,6 +138,15 @@ class TaskService {
                 });
 
                 exportCommand.on('close', (code) => {
+                  // todo
+                    // for (fileName of needModifyImageNames) {
+                    //     try {
+                    //         fs.copySync(dir + filename + 'bak', dir + filename)
+                    //         console.log("success!")
+                    //     } catch (err) {
+                    //         console.error(err)
+                    //     }
+                    // }
                     if (code == 0) {
                         console.log('export Success')
                         this.updateTaskResult(task, 1)
@@ -119,12 +154,20 @@ class TaskService {
                         console.log('export failure')
                         this.updateTaskResult(task, -1)
                     }
-                    Task.update({ id: task.id }, { isBuilding: false }, error => {
+                    Task.update({
+                        id: task.id
+                    }, {
+                        isBuilding: false
+                    }, error => {
 
                     })
                 });
             } else {
-                Task.update({ id: task.id }, { isBuilding: false }, error => {
+                Task.update({
+                    id: task.id
+                }, {
+                    isBuilding: false
+                }, error => {
 
                 })
             }
@@ -136,7 +179,11 @@ class TaskService {
             const gitService = new GitService()
             gitService.pushPlistProject(task)
         }
-        Task.update({ id: task.id }, { result: flag }, error => {
+        Task.update({
+            id: task.id
+        }, {
+            result: flag
+        }, error => {
             if (error) {
                 console.log('更新任务结果失败', error)
             } else {
@@ -147,7 +194,10 @@ class TaskService {
 
     async startNextTask(currentTask) {
         try {
-            const nextTask = await Task.findOne({ result: 0, isBuilding: false }).populate('projectId')
+            const nextTask = await Task.findOne({
+                result: 0,
+                isBuilding: false
+            }).populate('projectId')
             if (nextTask == undefined) {
                 console.log('没有下一个Task了')
                 return
@@ -159,6 +209,38 @@ class TaskService {
 
         } catch (error) {
             console.log('startNextTask error', error)
+        }
+    }
+
+    async addDateOnIcon(dir, files) {
+        for (filePath of files) {
+            fs.readFile(dir + filePath, function(err, squid) {
+                if (err) throw err;
+                img = new Image;
+                img.src = squid;
+
+                const canvas = new Canvas(img.width, img.height)
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+
+                let dateString = ""
+                const date = new Date()
+                dateString += date.getMonth() + 1
+                dateString += '/' + date.getDate()
+                dateString += ' ' + date.getHours()
+                dateString += ':' + date.getMinutes()
+
+
+                ctx.fillStyle = '#000'
+                if (img.width == 120) {
+                    ctx.font = '15px Impact';
+                    ctx.fillText(dateString, 20, 25);
+                } else if (img.width == 180) {
+                    ctx.font = '25px Impact';
+                    ctx.fillText(dateString, 30, 30);
+                }
+                canvas.createPNGStream().pipe(fs.createWriteStream('../bluegogo/Assets.xcassets/AppIcon.appiconset/' + filename))
+            });
         }
     }
 }

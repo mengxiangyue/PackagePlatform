@@ -76,12 +76,15 @@
         $.post('/tasks/' + $("#project-id").val(), (result) => {
             for (task of result) {
                 let state = ""
+                let installButton = ""
+                let logButton = `<a class="btn btn-primary btn-sm" href="/task_folder/${task.id}/log.txt">日志</a>`
                 if (task.result == 0) {
                     state = "等待打包"
                 } else if (task.result == -1) {
                     state = "打包失败"
                 } else if (task.result == 1) {
                     state = "打包成功"
+                    installButton = `<a class="btn btn-primary btn-sm" href="itms-services://?action=download-manifest&url=https://coding.net/u/mengxiangyue_speedx/p/plist/git/raw/master/${task.id}.plist">安装</a>`
                 }
                 if (task.isBuilding == true) {
                     state = "正在打包"
@@ -91,7 +94,10 @@
                         <td>${task.id}</td>
                         <td>目前还没有</td>
                         <td>${state}</td>
-                        <td><a class="btn btn-primary btn-sm" href="itms-services://?action=download-manifest&url=https://coding.net/u/mengxiangyue_speedx/p/plist/git/raw/master/${task.id}.plist">安装</a></td>
+                        <td>
+                          ${installButton}
+                          ${logButton}
+                        </td>
                     </tr>`
                 )
                 $("#task-list").append(taskDom)
