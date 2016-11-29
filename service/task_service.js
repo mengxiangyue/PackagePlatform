@@ -52,7 +52,7 @@ class TaskService {
     // 需要优化 简化参数传递
     async package(task, project, scheme, profile) {
         const dir = config.gitConfig.localPath + "/" + project.name + "/" + project.name + "/Assets.xcassets/AppIcon.appiconset/"
-        // const json = require(dir + "Contents.json")
+            // const json = require(dir + "Contents.json")
         const json = fs.readJsonSync(dir + "Contents.json")
         const images = json.images
         let needModifyImageNames = []
@@ -69,13 +69,14 @@ class TaskService {
             }
         }
         console.log("mxy", needModifyImageNames)
-        // todo 
-        // addDateOnIcon(dir, needModifyImageNames)
+
         const gitService = new GitService()
         const result = await gitService.pull(project)
         if (result) {
             // 将本次打包节点更新到数据库
         }
+        // todo
+        this.addDateOnIcon(dir, needModifyImageNames)
         Task.update({
             id: task.id
         }, {
@@ -138,15 +139,17 @@ class TaskService {
                 });
 
                 exportCommand.on('close', (code) => {
-                  // todo
-                    // for (fileName of needModifyImageNames) {
-                    //     try {
-                    //         fs.copySync(dir + filename + 'bak', dir + filename)
-                    //         console.log("success!")
-                    //     } catch (err) {
-                    //         console.error(err)
-                    //     }
-                    // }
+                    // todo
+                    for (let filename of needModifyImageNames) {
+                        try {
+                            fs.removeSync(dir + filename)
+                            fs.copySync(dir + filename + 'bak', dir + filename)
+                            fs.removeSync(dir + filename + 'bak')
+                            console.log("success!")
+                        } catch (err) {
+                            console.error(err)
+                        }
+                    }
                     if (code == 0) {
                         console.log('export Success')
                         this.updateTaskResult(task, 1)
@@ -212,11 +215,11 @@ class TaskService {
         }
     }
 
-    async addDateOnIcon(dir, files) {
-        for (filePath of files) {
+    addDateOnIcon(dir, files) {
+        for (let filePath of files) {
             fs.readFile(dir + filePath, function(err, squid) {
                 if (err) throw err;
-                img = new Image;
+                let img = new Image;
                 img.src = squid;
 
                 const canvas = new Canvas(img.width, img.height)
@@ -239,7 +242,7 @@ class TaskService {
                     ctx.font = '25px Impact';
                     ctx.fillText(dateString, 30, 30);
                 }
-                canvas.createPNGStream().pipe(fs.createWriteStream('../bluegogo/Assets.xcassets/AppIcon.appiconset/' + filename))
+                canvas.createPNGStream().pipe(fs.createWriteStream(dir + filePath))
             });
         }
     }
