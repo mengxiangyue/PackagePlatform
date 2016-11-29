@@ -2,6 +2,7 @@ const nodegit = require('nodegit')
 const fs = require('fs-extra')
 const Task = require('../model').Task
 const Project = require('../model').Project
+const MailService = require('./email_service').MailService
 const spawn = require('child_process').spawn;
 const Canvas = require('canvas'),
     Image = Canvas.Image
@@ -178,6 +179,10 @@ class TaskService {
     }
 
     updateTaskResult(task, flag) {
+      const mailService = new MailService()
+      let topic = "打包" + (flag == 1 ? "成功" : "失败")
+      mailService.send(topic, 'xiangyue.meng@speedx.com', '具体参看日志')
+      // mailService.send("打包" + (flag == 1 ? "成功" : "失败"), "xiangyue.meng@speedx.com", "具体参看日志"）
         if (flag == 1) {
             const gitService = new GitService()
             gitService.pushPlistProject(task)

@@ -1,9 +1,9 @@
 const nodemailer = require('nodemailer');
 
-const emailFrom = '"Fred Foo 👥" <mengxiangyue1990@163.com>'
+const emailFrom = '"孟祥月" <mengxiangyue1990@163.com>'
 
 // create reusable transporter object using the default SMTP transport
-const transporter = nodemailer.createTransport('smtps://mengxiangyue1990@163.com:445566m@smtp.163.com');
+const transporter = nodemailer.createTransport('smtps://mengxiangyue@163.com:xyfzffs@smtp.163.com');
 
 class MailService {
     async send(subject, to, content) {
